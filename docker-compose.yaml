@@ -1,0 +1,58 @@
+version: "3"
+
+services:
+
+  login-server:
+    image: login-server:latest
+    build:
+      context: ./login-server
+      dockerfile: Dockerfile
+    ports:
+      - 8080:8080
+    environment:
+      - "DB_HOST=db"
+      - "DB_USER=root"
+      - "DB_PASSWORD=qwe123-="
+    networks:
+      - study
+    # 容器总是重新启动
+    restart: always
+    # 指定一个自定义容器名称，而不是生成的默认名称。
+    container_name: login-server
+
+  db:
+    image: mysql:5.7
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: "qwe123-="
+    volumes:
+      - "./mysql/logs:/var/log/mysql"
+      - "./mysql/data:/var/lib/mysql"
+      - "./mysql/sql/init.sql:/docker-entrypoint-initdb.d/init.sql"
+      - "/etc/localtime:/etc/localtime"
+    networks:
+      - study
+    restart: always
+    command: --init-file /docker-entrypoint-initdb.d/init.sql
+    container_name: mysql
+    privileged: true
+
+  front-end:
+    # 服务的镜像名称或镜像ID。如果镜像在本地不存在，Compose将会尝试拉取镜像
+    image: nginx
+    ports:
+      - 80:80
+    volumes:
+      - "./web/nginx.conf:/etc/nginx/conf.d/default.conf"
+      - "./web/client:/client"
+    networks:
+      - study
+    privileged: true
+    restart: always
+    container_name: front-end
+
+networks:
+  # bridge：默认，需要单独配置ports映射主机port和服务的port，并且开启了容器间通信
+  study:
+
